@@ -1,0 +1,177 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+# TypeScript Library Starter - Cursor Rules
+
+This is a TypeScript library starter template that provides a modern development setup for creating publishable JavaScript/TypeScript libraries.
+
+## Project Overview
+
+- **Primary Language**: TypeScript
+- **Build System**: Unbuild (library) + Vite (playground)
+- **Testing**: Vitest with coverage support
+- **Code Quality**: ESLint + Prettier + Husky pre-commit hooks
+- **Package Manager**: pnpm (preferred)
+
+## Architecture & Project Structure
+
+```txt
+├── src/                    # Library source code (entry point: index.ts)
+├── dist/                   # Built library output (CJS and ESM formats)
+├── playground/             # Vite-powered development environment
+├── tests/                  # Vitest unit tests
+├── build.config.ts         # Unbuild configuration
+├── vitest.config.ts        # Test runner configuration
+├── playground/vite.config.ts # Development playground configuration
+└── tsconfig.json           # TypeScript compiler options
+```
+
+## Path Aliases
+
+The project uses consistent path aliases across all configurations:
+
+- `@/*` maps to `./src/*` (library source)
+- `~/*` maps to `./playground/*` (playground files)
+
+## Development Workflow
+
+1. **Library Development**: Write code in `src/`, test in `playground/` with `pnpm dev`
+2. **Testing**: Write unit tests in `tests/` directory with `*.test.ts` naming
+3. **Building**: Use `pnpm build` to generate distribution files
+4. **Publishing**: Use `pnpm release` for version management and publishing
+
+## Code Style & Quality Rules
+
+### TypeScript Configuration
+
+- **Target**: ESNext with bundler module resolution
+- **Strict Mode**: Enabled with additional strict checks
+- **No unused locals/parameters**: Enforced
+- **Source maps**: Enabled for debugging
+
+### ESLint Rules
+
+- Uses flat config format with TypeScript ESLint
+- Prettier integration for code formatting
+- Recommended TypeScript rules applied
+- Ignores: `dist/**`, `node_modules/**`, `*.config.js`, `*.config.ts`
+
+### File Naming Conventions
+
+- **Library files**: Use camelCase for TypeScript files
+- **Test files**: Use `*.test.ts` pattern in `tests/` directory
+- **Config files**: Use kebab-case with appropriate extensions
+
+## Build & Output Formats
+
+The library builds to multiple formats for maximum compatibility:
+
+- **ESM**: `dist/index.mjs` (modern module format)
+- **CJS**: `dist/index.cjs` (Node.js compatibility)
+- **Types**: `dist/index.d.ts` (TypeScript declarations)
+
+## Testing Strategy
+
+- **Framework**: Vitest (Jest-compatible API)
+- **Location**: Place tests in `tests/` directory
+- **Naming**: Follow `*.test.ts` pattern
+- **Coverage**: Available via `pnpm coverage`
+- **Development**: Use playground for manual testing
+
+## Common Commands
+
+### Development
+
+```bash
+pnpm dev                    # Start development playground with live reload
+pnpm test                   # Run all tests
+pnpm test:watch            # Run tests in watch mode
+pnpm coverage              # Run tests with coverage report
+```
+
+### Building & Quality
+
+```bash
+pnpm build                 # Build library for distribution
+pnpm generate              # Build playground for preview/deployment
+pnpm lint                  # Lint TypeScript files
+pnpm lint --fix           # Auto-fix linting issues
+```
+
+### Release
+
+```bash
+pnpm release               # Full release process (test, version, tag, publish)
+```
+
+## Code Guidelines
+
+### Library Code (`src/`)
+
+- Export all public APIs from `src/index.ts`
+- Use TypeScript strict mode features
+- Follow functional programming patterns where appropriate
+- Ensure tree-shaking compatibility (avoid side effects)
+
+### Test Code (`tests/`)
+
+- Write comprehensive unit tests for all exported functions
+- Use descriptive test names and organize with `describe` blocks
+- Test both happy paths and error conditions
+- Maintain good test coverage
+
+### Playground Code (`playground/`)
+
+- Use for manual testing and experimentation
+- Import library code using `@/` alias
+- Keep playground code simple and focused on testing library features
+
+## Dependencies & Package Management
+
+- **Package Manager**: pnpm (lockfile: pnpm-lock.yaml)
+- **Runtime Dependencies**: None (library should be dependency-free)
+- **Dev Dependencies**: Comprehensive tooling setup included
+- **Node Version**: Use latest LTS for development
+
+## Git Workflow
+
+- **Pre-commit Hooks**: Husky runs lint-staged on commit
+- **Lint-staged**: Runs ESLint and Prettier on staged files
+- **Versioning**: Uses standard-version for semantic versioning
+- **Publishing**: Automated via release script
+
+## Performance Considerations
+
+- **Bundle Size**: Keep library small and tree-shakeable
+- **Side Effects**: Mark as `"sideEffects": false` in package.json
+- **Module Formats**: Support both ESM and CJS for compatibility
+- **Type Definitions**: Provide comprehensive TypeScript definitions
+
+## Best Practices
+
+1. **Code Quality**: Always run lint and tests before committing
+2. **Documentation**: Update README and JSDoc comments for public APIs
+3. **Versioning**: Follow semantic versioning principles
+4. **Testing**: Write tests first or alongside feature development
+5. **Performance**: Profile bundle size and optimize for tree-shaking
+6. **Compatibility**: Test with both ESM and CJS consumers
+
+## Troubleshooting
+
+- **Build Issues**: Check TypeScript errors first, then unbuild config
+- **Test Failures**: Use `pnpm test:watch` for interactive debugging
+- **Lint Errors**: Use `pnpm lint --fix` for auto-fixable issues
+- **Path Resolution**: Verify path aliases in tsconfig.json and vite configs
+
+## When Adding New Features
+
+1. Write the feature in `src/`
+2. Export it from `src/index.ts`
+3. Add comprehensive tests in `tests/`
+4. Test manually in `playground/`
+5. Update documentation if needed
+6. Run full test suite before committing
+7. Use `pnpm release` for publishing
