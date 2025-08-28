@@ -8,7 +8,9 @@
 
 [![npm version](https://badge.fury.io/js/cl-nestjs-nacos.svg)](https://badge.fury.io/js/cl-nestjs-nacos)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/chaslui/cl-nestjs-nacos/workflows/CI/badge.svg)](https://github.com/chaslui/cl-nestjs-nacos/actions)
+[![Build Status](https://github.com/ChasLui/nest-js-nacos/workflows/Build%20%26%20Test/badge.svg)](https://github.com/ChasLui/nest-js-nacos/actions)
+[![Coverage Status](https://coveralls.io/repos/github/ChasLui/nest-js-nacos/badge.svg?branch=main)](https://coveralls.io/github/ChasLui/nest-js-nacos?branch=main)
+[![codecov](https://codecov.io/gh/ChasLui/nest-js-nacos/branch/main/graph/badge.svg)](https://codecov.io/gh/ChasLui/nest-js-nacos)
 
 > 基于 NestJS 框架的 Nacos 集成模块，支持服务注册发现和配置管理
 

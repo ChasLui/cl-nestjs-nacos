@@ -49,7 +49,7 @@ jobs:
       - name: Quality checks
         run: |
           pnpm lint
-          pnpm test
+          pnpm coverage
           pnpm build
 
       - name: Verify build outputs

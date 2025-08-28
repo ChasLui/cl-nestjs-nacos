@@ -35,7 +35,7 @@ jobs:
       - name: Quality checks
         run: |
           pnpm lint
-          pnpm test
+          pnpm coverage
           pnpm build
 
       - name: Verify build outputs
@@ -70,3 +70,20 @@ jobs:
             const { NacosModule, NacosService } = require('./dist/index.cjs');
             console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
           "
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        if: matrix.node-version == 20 # Only upload once
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage to Coveralls
+        uses: coverallsapp/github-action@v2
+        if: matrix.node-version == 20 # Only upload once
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ./coverage/lcov.info
