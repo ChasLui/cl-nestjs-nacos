@@ -29,14 +29,8 @@
     "tokenRef": "GITHUB_TOKEN"
   },
   "hooks": {
-    "before:init": ["echo 'Starting release process for ${name} v${version}'", "pnpm lint", "pnpm test", "pnpm build"],
-    "after:git:release": "echo 'Git release completed: ${repo.repository}/releases/tag/v${version}'",
-    "after:npm:release": "echo 'NPM package published: https://www.npmjs.com/package/${name}/v/${version}'",
-    "after:github:release": "echo 'GitHub release created: ${releaseUrl}'",
-    "after:release": [
-      "echo 'Successfully released ${name} v${version} to ${repo.repository}'",
-      "echo 'Release URL: ${releaseUrl}'"
-    ]
+    "before:init": ["pnpm lint", "pnpm test", "pnpm build"],
+    "after:release": "echo Release completed successfully!"
   },
   "plugins": {
     "@release-it/conventional-changelog": {
