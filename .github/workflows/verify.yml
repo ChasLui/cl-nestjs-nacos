@@ -26,13 +26,13 @@ jobs:
         uses: actions/checkout@master
 
       - name: Install dependencies
-        run: yarn
+        run: pnpm
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Test
-        run: yarn test
-      
+        run: pnpm test
+
       - name: Build
-        run: yarn build
+        run: pnpm build
