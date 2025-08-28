@@ -1,12 +1,12 @@
 {
-  "name": "nest-js-nacos",
+  "name": "@chaslui1/nestjs-nacos",
   "version": "0.0.0",
   "description": "NestJS 集成 Nacos 服务注册和配置中心",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chaslui/nest-js-nacos.git"
+    "url": "git+https://github.com/chaslui/nestjs-nacos.git"
   },
-  "homepage": "https://github.com/chaslui/nest-js-nacos",
+  "homepage": "https://github.com/chaslui/nestjs-nacos",
   "license": "MIT",
   "scripts": {
     "dev": "vite --config ./playground/vite.config.ts",
@@ -78,7 +78,7 @@
     "vitest": "^3.2.4"
   },
   "bugs": {
-    "url": "https://github.com/chaslui/nest-js-nacos/issues"
+    "url": "https://github.com/chaslui/nestjs-nacos/issues"
   },
   "directories": {
     "test": "tests"
