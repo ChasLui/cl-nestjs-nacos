@@ -1,4 +1,8 @@
-name: Build & Test
+name: 🔧 CI - Build & Test
+
+# Continuous Integration workflow for building, testing, and validating the cl-nestjs-nacos library
+# Runs on every push to main branch and on pull requests
+# Tests across multiple Node.js versions to ensure compatibility
 
 on:
   push:
@@ -7,7 +11,7 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,30 +19,30 @@ jobs:
         node-version: [20, 22]
 
     steps:
-      - name: Checkout
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
+      - name: 📦 Setup pnpm Package Manager
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
 
-      - name: Install dependencies
+      - name: 📚 Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Quality checks
+      - name: 🔍 Run Quality Checks (Lint & Test)
         run: |
           pnpm lint
           pnpm coverage
           pnpm build
 
-      - name: Verify build outputs
+      - name: ✅ Verify Build Outputs
         run: |
           # Check required files exist
           required_files=(
@@ -57,7 +61,7 @@ jobs:
 
           echo "✅ All build outputs verified"
 
-      - name: Test module imports
+      - name: 🧪 Test Module Imports (ESM & CJS)
         run: |
           # Test ESM imports
           node --input-type=module -e "
@@ -71,7 +75,7 @@ jobs:
             console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
           "
 
-      - name: Upload coverage reports
+      - name: 📊 Upload Coverage to Codecov
         uses: codecov/codecov-action@v4
         if: matrix.node-version == 20 # Only upload once
         with:
@@ -81,7 +85,7 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      - name: Upload coverage to Coveralls
+      - name: 📈 Upload Coverage to Coveralls
         uses: coverallsapp/github-action@v2
         if: matrix.node-version == 20 # Only upload once
         with:

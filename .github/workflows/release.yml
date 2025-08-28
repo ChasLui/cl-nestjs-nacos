@@ -1,4 +1,8 @@
-name: Release
+name: 🚀 Release & Publish
+
+# Automated release workflow for the cl-nestjs-nacos library
+# Creates semantic releases and publishes to NPM registry
+# Triggered on main branch pushes (excluding release commits) and manual dispatch
 
 on:
   push:
@@ -12,38 +16,38 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
+  release-and-publish:
     runs-on: ubuntu-latest
     if: '!contains(github.event.head_commit.message, "chore: release")'
     steps:
-      - name: Checkout
+      - name: 📥 Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup pnpm
+      - name: 📦 Setup pnpm Package Manager
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - name: Setup Node.js
+      - name: 🟢 Setup Node.js Runtime
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'pnpm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Install dependencies
+      - name: 📚 Install Dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run tests
+      - name: 🧪 Run Test Suite
         run: pnpm test
 
-      - name: Build
+      - name: 🔧 Build Library
         run: pnpm build
 
-      - name: Release
+      - name: 🚀 Create Release & Publish to NPM
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
