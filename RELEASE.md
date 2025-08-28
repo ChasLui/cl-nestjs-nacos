@@ -1,12 +1,12 @@
-# Release Guide
+# 发布指南
 
-This project uses [release-it](https://github.com/release-it/release-it) for automated releases with conventional changelog generation and GitHub releases.
+本项目使用 [release-it](https://github.com/release-it/release-it) 进行自动化发布，支持传统的变更日志生成和 GitHub 发布。
 
-## Release Workflow
+## 发布流程
 
-### Automatic Releases (Recommended)
+### 自动发布（推荐）
 
-1. **Commit your changes** following [Conventional Commits](https://www.conventionalcommits.org/) format:
+1. **提交更改**，遵循 [约定式提交](https://www.conventionalcommits.org/) 格式：
 
    ```bash
    git commit -m "feat: add new feature"
@@ -14,83 +14,83 @@ This project uses [release-it](https://github.com/release-it/release-it) for aut
    git commit -m "docs: update documentation"
    ```
 
-2. **Push to main branch**:
+2. **推送到主分支**：
 
    ```bash
    git push origin main
    ```
 
-3. **GitHub Actions will automatically**:
-   - Run tests and build
-   - Determine the next version based on commit messages
-   - Generate changelog
-   - Create Git tag
-   - Create GitHub release
-   - Publish to npm
+3. **GitHub Actions 将自动执行**：
+   - 运行测试和构建
+   - 根据提交消息确定下一个版本
+   - 生成变更日志
+   - 创建 Git 标签
+   - 创建 GitHub 发布
+   - 发布到 npm
 
-### Manual Releases
+### 手动发布
 
-For manual releases, use the following commands:
+手动发布请使用以下命令：
 
-#### Dry Run (Preview)
+#### 试运行（预览）
 
 ```bash
 pnpm release:dry
 ```
 
-#### Interactive Release
+#### 交互式发布
 
 ```bash
 pnpm release
 ```
 
-#### CI Release (Non-interactive)
+#### CI 发布（非交互式）
 
 ```bash
 pnpm release:ci
 ```
 
-## Configuration
+## 配置
 
-### Release-it Configuration (`.release-it.json`)
+### Release-it 配置 (`.release-it.json`)
 
-- **Git**: Automatic commit, tagging, and push
-- **npm**: Publishes to npm with public access
-- **GitHub**: Creates releases with auto-generated notes
-- **Changelog**: Uses conventional changelog format
-- **Hooks**: Runs tests and build before release
+- **Git**：自动提交、打标签和推送
+- **npm**：以公开访问权限发布到 npm
+- **GitHub**：创建带有自动生成说明的发布
+- **变更日志**：使用传统的变更日志格式
+- **钩子**：在发布前运行测试和构建
 
-### Required Environment Variables
+### 必需的环境变量
 
-For automated GitHub releases, set these secrets in your repository:
+对于自动化 GitHub 发布，请在仓库中设置这些密钥：
 
-- `GITHUB_TOKEN`: Automatically provided by GitHub Actions
-- `NPM_TOKEN`: Your npm authentication token (for publishing)
+- `GITHUB_TOKEN`：由 GitHub Actions 自动提供
+- `NPM_TOKEN`：您的 npm 认证令牌（用于发布）
 
-## Commit Message Format
+## 提交消息格式
 
-Follow [Conventional Commits](https://www.conventionalcommits.org/) specification:
+遵循 [约定式提交](https://www.conventionalcommits.org/) 规范：
 
 ```
-<type>[optional scope]: <description>
+<类型>[可选作用域]: <描述>
 
-[optional body]
+[可选正文]
 
-[optional footer(s)]
+[可选脚注]
 ```
 
-### Types
+### 类型
 
-- `feat`: A new feature
-- `fix`: A bug fix
-- `docs`: Documentation only changes
-- `style`: Changes that do not affect the meaning of the code
-- `refactor`: A code change that neither fixes a bug nor adds a feature
-- `perf`: A code change that improves performance
-- `test`: Adding missing tests or correcting existing tests
-- `chore`: Changes to the build process or auxiliary tools
+- `feat`：新功能
+- `fix`：错误修复
+- `docs`：仅文档更改
+- `style`：不影响代码含义的更改
+- `refactor`：既不修复错误也不添加功能的代码更改
+- `perf`：提高性能的代码更改
+- `test`：添加缺失的测试或修正现有测试
+- `chore`：对构建过程或辅助工具的更改
 
-### Examples
+### 示例
 
 ```bash
 feat: add support for custom configuration
@@ -99,19 +99,19 @@ docs: update API documentation
 chore: upgrade dependencies
 ```
 
-## Version Bumping
+## 版本升级
 
-Version bumps are determined automatically based on commit messages:
+版本升级根据提交消息自动确定：
 
-- **Patch** (0.0.x): `fix:`, `docs:`, `style:`, `refactor:`, `perf:`, `test:`, `chore:`
-- **Minor** (0.x.0): `feat:`
-- **Major** (x.0.0): Any commit with `BREAKING CHANGE:` in footer or `!` after type
+- **补丁版本** (0.0.x)：`fix:`、`docs:`、`style:`、`refactor:`、`perf:`、`test:`、`chore:`
+- **次版本** (0.x.0)：`feat:`
+- **主版本** (x.0.0)：任何在脚注中包含 `BREAKING CHANGE:` 或在类型后有 `!` 的提交
 
-## Troubleshooting
+## 故障排除
 
-### Clean Working Directory
+### 清理工作目录
 
-Ensure your working directory is clean before releasing:
+发布前确保工作目录是干净的：
 
 ```bash
 git status
@@ -119,26 +119,26 @@ git add .
 git commit -m "chore: prepare for release"
 ```
 
-### GitHub Token Issues
+### GitHub 令牌问题
 
-If GitHub release creation fails, ensure:
+如果 GitHub 发布创建失败，请确保：
 
-1. `GITHUB_TOKEN` environment variable is set
-2. Token has appropriate permissions for repository
+1. 设置了 `GITHUB_TOKEN` 环境变量
+2. 令牌对仓库有适当的权限
 
-### npm Publishing Issues
+### npm 发布问题
 
-If npm publishing fails:
+如果 npm 发布失败：
 
-1. Verify `NPM_TOKEN` is set correctly
-2. Ensure you're logged in: `npm whoami`
-3. Check package name availability
+1. 验证 `NPM_TOKEN` 设置正确
+2. 确保已登录：`npm whoami`
+3. 检查包名可用性
 
-## Manual GitHub Release Creation
+## 手动创建 GitHub 发布
 
-If automated GitHub release fails, create manually:
+如果自动化 GitHub 发布失败，请手动创建：
 
-1. Go to [GitHub Releases](https://github.com/ChasLui/nest-js-nacos/releases)
-2. Click "Create a new release"
-3. Use the tag created by release-it
-4. Copy changelog content from `CHANGELOG.md`
+1. 前往 [GitHub 发布页面](https://github.com/ChasLui/nest-js-nacos/releases)
+2. 点击"创建新发布"
+3. 使用 release-it 创建的标签
+4. 从 `CHANGELOG.md` 复制变更日志内容
