@@ -3,10 +3,10 @@
 </p>
 
 <h1 align="center">
-  @chaslui1/nestjs-nacos
+  cl-nestjs-nacos
 </h1>
 
-[![npm version](https://badge.fury.io/js/@chaslui1/nestjs-nacos.svg)](https://badge.fury.io/js/@chaslui1/nestjs-nacos)
+[![npm version](https://badge.fury.io/js/cl-nestjs-nacos.svg)](https://badge.fury.io/js/cl-nestjs-nacos)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/chaslui/nestjs-nacos/workflows/CI/badge.svg)](https://github.com/chaslui/nestjs-nacos/actions)
 
@@ -28,11 +28,11 @@
 ## 安装
 
 ```bash
-npm install @chaslui1/nestjs-nacos
+npm install cl-nestjs-nacos
 # 或
-yarn add @chaslui1/nestjs-nacos
+yarn add cl-nestjs-nacos
 # 或
-pnpm add @chaslui1/nestjs-nacos
+pnpm add cl-nestjs-nacos
 ```
 
 ## 快速开始
@@ -41,7 +41,7 @@ pnpm add @chaslui1/nestjs-nacos
 
 ```typescript
 import { Module, OnModuleInit, Injectable } from '@nestjs/common';
-import { NacosService, NacosModule, ConfigType } from '@chaslui1/nestjs-nacos';
+import { NacosService, NacosModule, ConfigType } from 'cl-nestjs-nacos';
 
 @Module({
   imports: [
@@ -103,7 +103,7 @@ export class AppService {
 
 ```typescript
 import { Module, Injectable } from '@nestjs/common';
-import { NacosConfigService, NacosModule, ConfigType } from '@chaslui1/nestjs-nacos';
+import { NacosConfigService, NacosModule, ConfigType } from 'cl-nestjs-nacos';
 
 @Module({
   imports: [
@@ -153,7 +153,7 @@ export class ConfigService {
 
 ### 支持的配置格式
 
-@chaslui1/nestjs-nacos 支持多种配置文件格式的解析：
+cl-nestjs-nacos 支持多种配置文件格式的解析：
 
 | 格式           | 扩展名          | 说明                               |
 | -------------- | --------------- | ---------------------------------- |
@@ -171,7 +171,7 @@ export class ConfigService {
 #### 1. 明确指定配置类型
 
 ```typescript
-import { ConfigType } from '@chaslui1/nestjs-nacos';
+import { ConfigType } from 'cl-nestjs-nacos';
 
 NacosModule.forRoot({
   // ... 其他配置
@@ -319,7 +319,7 @@ app.version=1.0.0
 
 ## 环境变量支持
 
-@chaslui1/nestjs-nacos 支持在配置中使用环境变量占位符，提供了灵活的配置管理方式。
+cl-nestjs-nacos 支持在配置中使用环境变量占位符，提供了灵活的配置管理方式。
 
 ### 占位符语法
 
@@ -477,7 +477,7 @@ export class AppModule {}
 
 ```typescript
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { NacosService } from '@chaslui1/nestjs-nacos';
+import { NacosService } from 'cl-nestjs-nacos';
 
 interface AppConfig {
   database: {
@@ -563,7 +563,7 @@ export class DynamicConfigService implements OnModuleInit {
 ### 错误处理
 
 ```typescript
-import { ConfigError, ServiceError, ValidationError, ConnectionError } from '@chaslui1/nestjs-nacos';
+import { ConfigError, ServiceError, ValidationError, ConnectionError } from 'cl-nestjs-nacos';
 
 try {
   const config = await this.nacos.getConfig('non-existent-key');

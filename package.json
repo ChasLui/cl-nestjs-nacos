@@ -1,5 +1,5 @@
 {
-  "name": "@chaslui1/nestjs-nacos",
+  "name": "cl-nestjs-nacos",
   "version": "0.0.0",
   "description": "NestJS 集成 Nacos 服务注册和配置中心",
   "repository": {
