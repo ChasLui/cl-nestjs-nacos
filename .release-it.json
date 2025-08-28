@@ -1,9 +1,10 @@
 {
+  "$schema": "https://unpkg.com/release-it/schema/release-it.json",
   "git": {
     "commitMessage": "chore: release v${version}",
     "tagName": "v${version}",
-    "requireCleanWorkingDir": true,
-    "requireUpstream": true,
+    "requireCleanWorkingDir": false,
+    "requireUpstream": false,
     "requireCommits": true,
     "addUntrackedFiles": false,
     "commit": true,
@@ -14,7 +15,8 @@
   "npm": {
     "publish": true,
     "publishArgs": ["--access", "public"],
-    "registry": "https://registry.npmjs.org/"
+    "registry": "https://registry.npmjs.org/",
+    "skipChecks": false
   },
   "github": {
     "release": true,
@@ -23,11 +25,18 @@
     "autoGenerate": true,
     "draft": false,
     "preRelease": false,
-    "web": false
+    "web": false,
+    "tokenRef": "GITHUB_TOKEN"
   },
   "hooks": {
-    "before:init": ["pnpm test", "pnpm build"],
-    "after:release": ["echo Successfully released ${name} v${version} to ${repo.repository}."]
+    "before:init": ["echo 'Starting release process for ${name} v${version}'", "pnpm lint", "pnpm test", "pnpm build"],
+    "after:git:release": "echo 'Git release completed: ${repo.repository}/releases/tag/v${version}'",
+    "after:npm:release": "echo 'NPM package published: https://www.npmjs.com/package/${name}/v/${version}'",
+    "after:github:release": "echo 'GitHub release created: ${releaseUrl}'",
+    "after:release": [
+      "echo 'Successfully released ${name} v${version} to ${repo.repository}'",
+      "echo 'Release URL: ${releaseUrl}'"
+    ]
   },
   "plugins": {
     "@release-it/conventional-changelog": {
@@ -35,8 +44,9 @@
         "name": "angular"
       },
       "infile": "CHANGELOG.md",
-      "header": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [release-it](https://github.com/release-it/release-it) for commit guidelines.\n\n",
-      "ignoreRecommendedBump": false
+      "header": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.\n\n",
+      "ignoreRecommendedBump": false,
+      "strictSemVer": true
     },
     "release-it-pnpm": {
       "publishPath": "."

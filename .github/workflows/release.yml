@@ -1,8 +1,8 @@
-name: 🚀 Release & Publish
+name: '🚀 Release & Publish'
 
-# Automated release workflow for the cl-nestjs-nacos library
-# Creates semantic releases and publishes to NPM registry
-# Triggered on main branch pushes (excluding release commits) and manual dispatch
+# Standard release-it workflow for automated semantic releases
+# Based on https://github.com/release-it/release-it best practices
+# Triggers: Push to main (excluding release commits) and manual dispatch
 
 on:
   push:
@@ -14,41 +14,69 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  id-token: write
 
 jobs:
-  release-and-publish:
+  release:
+    name: Release & Publish
     runs-on: ubuntu-latest
-    if: '!contains(github.event.head_commit.message, "chore: release")'
+    if: "!startsWith(github.event.head_commit.message, 'chore: release')"
+    outputs:
+      released: ${{ steps.release.outputs.released }}
+      version: ${{ steps.release.outputs.version }}
+
     steps:
-      - name: 📥 Checkout Repository
+      - name: 📥 Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 📦 Setup pnpm Package Manager
+      - name: 📦 Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
-      - name: 🟢 Setup Node.js Runtime
+      - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'pnpm'
-          registry-url: 'https://registry.npmjs.org'
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
 
-      - name: 📚 Install Dependencies
+      - name: 📚 Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: 🧪 Run Test Suite
-        run: pnpm test
+      - name: 🔍 Run quality checks
+        run: |
+          pnpm lint
+          pnpm test
+          pnpm build
 
-      - name: 🔧 Build Library
-        run: pnpm build
-
-      - name: 🚀 Create Release & Publish to NPM
+      - name: 🚀 Release with release-it
+        id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm release --ci
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Configure git user for release-it
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Run release-it in CI mode
+          pnpm release:ci --verbose
+
+          # Set outputs for downstream jobs
+          echo "released=true" >> $GITHUB_OUTPUT
+          echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: 📊 Release Summary
+        if: steps.release.outputs.released == 'true'
+        run: |
+          echo "## 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: v${{ steps.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Package**: [${{ github.repository }}](https://www.npmjs.com/package/cl-nestjs-nacos)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release**: [View on GitHub](https://github.com/${{ github.repository }}/releases/latest)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Changelog**: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)" >> $GITHUB_STEP_SUMMARY
