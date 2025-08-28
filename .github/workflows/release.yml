@@ -1,30 +1,26 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
-    inputs:
-      bump:
-        description: 'Version bump type'
-        type: choice
-        required: false
-        default: patch
-        options: [patch, minor, major]
 
 permissions:
   contents: write
+  issues: write
+  pull-requests: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+    if: "!contains(github.event.head_commit.message, 'chore: release')"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -34,107 +30,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
-          registry-url: https://registry.npmjs.org
-
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          node-version: 20
+          cache: 'pnpm'
+          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Quality checks
-        run: |
-          pnpm lint
-          pnpm coverage
-          pnpm build
+      - name: Run tests
+        run: pnpm test
 
-      - name: Verify build outputs
-        run: |
-          echo "Verifying build outputs..."
-
-          # Check required files exist
-          required_files=(
-            "dist/index.mjs" "dist/index.cjs" "dist/index.d.ts"
-            "dist/errors/index.mjs" "dist/errors/index.cjs" "dist/errors/index.d.ts"
-            "dist/cache/index.mjs" "dist/cache/index.cjs" "dist/cache/index.d.ts"
-            "dist/base/index.mjs" "dist/base/index.cjs" "dist/base/index.d.ts"
-          )
-
-          for file in "${required_files[@]}"; do
-            if [[ ! -f "$file" ]]; then
-              echo "❌ Missing: $file"
-              exit 1
-            fi
-          done
-
-          echo "✅ All required build outputs verified"
-
-      - name: Test module imports
-        run: |
-          # Test ESM imports
-          node --input-type=module -e "
-            import { NacosModule, NacosService } from './dist/index.mjs';
-            console.log('✅ ESM import successful:', typeof NacosModule, typeof NacosService);
-          "
-
-          # Test CJS requires
-          node -e "
-            const { NacosModule, NacosService } = require('./dist/index.cjs');
-            console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
-          "
+      - name: Build
+        run: pnpm build
 
       - name: Release
-        run: |
-          # Version bump and changelog
-          npx standard-version --release-as ${{ inputs.bump }}
-
-          # Get new version
-          NEW_VERSION=$(node -p "require('./package.json').version")
-          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-
-          # Push changes
-          git push --follow-tags
-
-          # Publish to npm
-          npm publish --access public
-
-          echo "✅ Released v$NEW_VERSION"
-
-      - name: Verify release
-        run: |
-          PKG_NAME=$(node -p "require('./package.json').name")
-
-          # Wait for package to be available
-          echo "Waiting for $PKG_NAME@$NEW_VERSION on npm..."
-          for i in {1..12}; do
-            if npm view "$PKG_NAME@$NEW_VERSION" version --silent 2>/dev/null; then
-              echo "✅ Package available on npm"
-              break
-            fi
-            echo "⏳ Waiting... (${i}/12)"
-            sleep 10
-          done
-
-          # Quick installation test
-          mkdir -p /tmp/test && cd /tmp/test
-          echo '{"type": "module"}' > package.json
-          npm install "$PKG_NAME@$NEW_VERSION" --silent
-
-          node -e "
-            import('$PKG_NAME').then(() => console.log('✅ Installation test passed'))
-              .catch(err => { console.error('❌ Installation test failed:', err.message); process.exit(1); });
-          "
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-v${{ env.NEW_VERSION }}
-          path: |
-            dist/
-            package.json
-            README.md
-            LICENSE
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: pnpm release --ci

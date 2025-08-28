@@ -18,6 +18,8 @@
     "coverage": "vitest run --coverage",
     "prepare": "husky install",
     "release": "release-it",
+    "release:dry": "release-it --dry-run",
+    "release:ci": "release-it --ci",
     "playground:install": "cd playground && npm install",
     "playground:dev": "cd playground && npm run start:dev",
     "playground:build": "cd playground && npm run build",
