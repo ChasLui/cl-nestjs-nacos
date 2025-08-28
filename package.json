@@ -1,6 +1,6 @@
 {
   "name": "cl-nestjs-nacos",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "NestJS 集成 Nacos 服务注册和配置中心",
   "repository": {
     "type": "git",
