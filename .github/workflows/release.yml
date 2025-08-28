@@ -1,9 +1,5 @@
 name: '🚀 Release & Publish'
 
-# Standard release-it workflow for automated semantic releases
-# Based on https://github.com/release-it/release-it best practices
-# Triggers: Push to main (excluding release commits) and manual dispatch
-
 on:
   push:
     branches:
