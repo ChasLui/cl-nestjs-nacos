@@ -77,14 +77,14 @@ jobs:
         run: |
           # Test ESM imports
           node --input-type=module -e "
-            import pkg from './dist/index.mjs';
-            console.log('✅ ESM import successful');
+            import { NacosModule, NacosService } from './dist/index.mjs';
+            console.log('✅ ESM import successful:', typeof NacosModule, typeof NacosService);
           "
 
           # Test CJS requires
           node -e "
-            const pkg = require('./dist/index.cjs');
-            console.log('✅ CJS require successful');
+            const { NacosModule, NacosService } = require('./dist/index.cjs');
+            console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
           "
 
       - name: Release
