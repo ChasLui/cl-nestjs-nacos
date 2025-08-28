@@ -8,7 +8,7 @@
 
 [![npm version](https://badge.fury.io/js/cl-nestjs-nacos.svg)](https://badge.fury.io/js/cl-nestjs-nacos)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/chaslui/nestjs-nacos/workflows/CI/badge.svg)](https://github.com/chaslui/nestjs-nacos/actions)
+[![Build Status](https://github.com/chaslui/cl-nestjs-nacos/workflows/CI/badge.svg)](https://github.com/chaslui/cl-nestjs-nacos/actions)
 
 > 基于 NestJS 框架的 Nacos 集成模块，支持服务注册发现和配置管理
 
@@ -1007,7 +1007,7 @@ export class LazyConfigService {
 
 ```bash
 # 克隆仓库
-git clone https://github.com/chaslui/nestjs-nacos.git
+git clone https://github.com/chaslui/cl-nestjs-nacos.git
 cd nestjs-nacos
 
 # 安装依赖

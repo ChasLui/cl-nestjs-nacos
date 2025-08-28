@@ -1,0 +1,107 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Semver bump type'
+        type: choice
+        required: false
+        default: patch
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+          always-auth: true
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: dist/
+          if-no-files-found: error
+
+      - name: Version and Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          # Use standard-version to bump version and create changelog
+          npx standard-version --release-as ${{ inputs.bump }}
+
+          # Push the version commit and tag
+          git push --follow-tags
+
+          # Publish to npm
+          npm publish --access public
+        shell: bash
+
+      - name: Download published npm tarball
+        id: download_tarball
+        run: |
+          set -euo pipefail
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          echo "Waiting for $PKG@$VER to be available on npm..."
+          for i in {1..24}; do
+            if npm view "$PKG@$VER" version --silent >/dev/null 2>&1; then
+              echo "Found $PKG@$VER on npm (attempt $i)."
+              break
+            fi
+            echo "Not yet available (attempt $i). Sleeping 5s..."
+            sleep 5
+          done
+          npm view "$PKG@$VER" version --silent >/dev/null 2>&1 || true
+          TARBALL=$(npm pack "$PKG@$VER" --silent)
+          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Upload npm tarball to GitHub Release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG=v$(node -p "require('./package.json').version")
+          gh release upload "$TAG" "$TARBALL" --clobber
+        shell: bash
