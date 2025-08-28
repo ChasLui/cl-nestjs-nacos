@@ -18,7 +18,7 @@ jobs:
         node: [20, 22]
 
     steps:
-      - name: checkout
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup pnpm
@@ -26,7 +26,8 @@ jobs:
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
@@ -40,5 +41,100 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build
+      - name: Build library
         run: pnpm build
+
+      - name: Verify dual module format output
+        run: |
+          echo "Verifying ESM and CJS output files..."
+          ls -la dist/
+
+          # Check for ESM files
+          if [ ! -f "dist/index.mjs" ]; then
+            echo "❌ Missing ESM main entry: dist/index.mjs"
+            exit 1
+          fi
+
+          # Check for CJS files
+          if [ ! -f "dist/index.cjs" ]; then
+            echo "❌ Missing CJS main entry: dist/index.cjs"
+            exit 1
+          fi
+
+          # Check for TypeScript declarations
+          if [ ! -f "dist/index.d.ts" ]; then
+            echo "❌ Missing TypeScript declarations: dist/index.d.ts"
+            exit 1
+          fi
+
+          # Check submodule exports
+          for module in errors cache base; do
+            if [ ! -f "dist/$module/index.mjs" ] || [ ! -f "dist/$module/index.cjs" ] || [ ! -f "dist/$module/index.d.ts" ]; then
+              echo "❌ Missing $module submodule files"
+              exit 1
+            fi
+          done
+
+          echo "✅ All dual module format files are present"
+        shell: bash
+
+      - name: Test ESM import
+        run: |
+          echo "Testing ESM import..."
+          node --input-type=module -e "
+            import { NacosModule, NacosService } from './dist/index.mjs';
+            console.log('✅ ESM import successful:', typeof NacosModule, typeof NacosService);
+          "
+
+      - name: Test CJS require
+        run: |
+          echo "Testing CJS require..."
+          node -e "
+            const { NacosModule, NacosService } = require('./dist/index.cjs');
+            console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
+          "
+
+      - name: Test submodule imports
+        run: |
+          echo "Testing submodule imports..."
+
+          # Test ESM submodule imports
+          node --input-type=module -e "
+            import { NacosError } from './dist/errors/index.mjs';
+            import { ConfigCache } from './dist/cache/index.mjs';
+            import { AbstractNacosClient } from './dist/base/index.mjs';
+            console.log('✅ ESM submodule imports successful');
+          "
+
+          # Test CJS submodule requires
+          node -e "
+            const { NacosError } = require('./dist/errors/index.cjs');
+            const { ConfigCache } = require('./dist/cache/index.cjs');
+            const { AbstractNacosClient } = require('./dist/base/index.cjs');
+            console.log('✅ CJS submodule requires successful');
+          "
+
+      - name: Install playground dependencies
+        run: |
+          cd playground
+          pnpm install
+
+      - name: Build playground
+        run: |
+          cd playground
+          npm run build
+
+      - name: Test playground startup (Linux/macOS only)
+        if: runner.os != 'Windows'
+        run: |
+          cd playground
+          timeout 10s npm run start:prod > startup.log 2>&1 || true
+
+          # Check if the application started successfully
+          if grep -q "Nest application successfully started" startup.log; then
+            echo "✅ Playground started successfully"
+          else
+            echo "❌ Playground failed to start"
+            cat startup.log
+            exit 1
+          fi

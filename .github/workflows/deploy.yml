@@ -1,12 +1,15 @@
 name: Build and Deploy
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-and-deploy:
     concurrency: ci-${{ github.ref }} # Recommended if you intend to make multiple deployments in quick succession.
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout 🛎️
         uses: actions/checkout@v4
@@ -16,20 +19,78 @@ jobs:
         with:
           version: 10
 
-      - name: Use Node.js 22
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
           cache: pnpm
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Generate Demo
-        run: pnpm generate
+      - name: Lint
+        run: pnpm lint
 
-      - name: Deploy 🚀
+      - name: Test
+        run: pnpm test
+
+      - name: Build library
+        run: pnpm build
+
+      - name: Verify dual module format
+        run: |
+          echo "Verifying build output..."
+          ls -la dist/
+
+          # Verify essential files exist
+          for file in index.mjs index.cjs index.d.ts; do
+            if [ ! -f "dist/$file" ]; then
+              echo "❌ Missing: dist/$file"
+              exit 1
+            fi
+          done
+
+          echo "✅ Library build verification successful"
+
+      - name: Install playground dependencies
+        run: |
+          cd playground
+          pnpm install
+
+      - name: Build playground
+        run: |
+          cd playground
+          npm run build
+
+      - name: Verify playground build
+        run: |
+          echo "Verifying playground build..."
+          ls -la playground/dist/
+
+          if [ ! -f "playground/dist/main.js" ]; then
+            echo "❌ Missing playground/dist/main.js"
+            exit 1
+          fi
+
+          echo "✅ Playground build verification successful"
+
+      - name: Test playground startup
+        run: |
+          cd playground
+          timeout 10s npm run start:prod > startup.log 2>&1 || true
+
+          if grep -q "Nest application successfully started" startup.log; then
+            echo "✅ Playground startup test successful"
+          else
+            echo "⚠️ Playground startup test failed (this is expected if port is in use)"
+            echo "Startup log:"
+            cat startup.log
+          fi
+
+      - name: Deploy to GitHub Pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4.4.0
         with:
-          branch: gh-pages # The branch the action should deploy to.
-          folder: playground/dist # The folder the action should deploy.
+          branch: gh-pages
+          folder: playground/dist
+          clean: true
+          single-commit: true

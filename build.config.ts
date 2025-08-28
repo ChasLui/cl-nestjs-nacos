@@ -16,12 +16,24 @@ export default defineBuildConfig({
     '~': resolve(__dirname, './playground'),
   },
   rollup: {
-    emitCJS: true,
+    emitCJS: true, // 生成 CJS 格式 (.cjs)
     inlineDependencies: false, // 改为 false 以支持更好的 tree-shaking
     dts: {
       respectExternal: true,
     },
+    esbuild: {
+      // 启用装饰器支持
+      tsconfigRaw: {
+        compilerOptions: {
+          experimentalDecorators: true,
+          emitDecoratorMetadata: true,
+          target: 'ES2020',
+        },
+      },
+    },
   },
+  // 确保生成 ESM 和 CJS 两种格式
+  format: ['esm', 'cjs'],
   externals: [
     // NestJS 相关
     '@nestjs/common',

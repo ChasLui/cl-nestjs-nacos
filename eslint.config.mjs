@@ -21,6 +21,10 @@ export default [
         __filename: 'readonly',
         Buffer: 'readonly',
         global: 'readonly',
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     plugins: {
@@ -34,6 +38,6 @@ export default [
   },
   prettier,
   {
-    ignores: ['dist/**', 'node_modules/**', '*.config.js', '*.config.ts'],
+    ignores: ['dist/**', 'playground/dist/**', 'node_modules/**', '*.config.js', '*.config.ts'],
   },
 ];

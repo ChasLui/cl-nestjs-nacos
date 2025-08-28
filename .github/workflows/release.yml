@@ -52,14 +52,71 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build
+      - name: Build library
         run: pnpm build
+
+      - name: Verify dual module format
+        run: |
+          echo "Verifying dual module format build..."
+          ls -la dist/
+
+          # Check for ESM files
+          for file in index.mjs errors/index.mjs cache/index.mjs base/index.mjs; do
+            if [ ! -f "dist/$file" ]; then
+              echo "❌ Missing ESM file: dist/$file"
+              exit 1
+            fi
+          done
+
+          # Check for CJS files
+          for file in index.cjs errors/index.cjs cache/index.cjs base/index.cjs; do
+            if [ ! -f "dist/$file" ]; then
+              echo "❌ Missing CJS file: dist/$file"
+              exit 1
+            fi
+          done
+
+          # Check for TypeScript declarations
+          for file in index.d.ts errors/index.d.ts cache/index.d.ts base/index.d.ts; do
+            if [ ! -f "dist/$file" ]; then
+              echo "❌ Missing TypeScript declaration: dist/$file"
+              exit 1
+            fi
+          done
+
+          echo "✅ All dual module format files verified"
+
+      - name: Test module imports before release
+        run: |
+          echo "Testing module imports before release..."
+
+          # Test ESM imports
+          node --input-type=module -e "
+            import { NacosModule, NacosService, NacosConfigService } from './dist/index.mjs';
+            import { NacosError } from './dist/errors/index.mjs';
+            import { ConfigCache } from './dist/cache/index.mjs';
+            import { AbstractNacosClient } from './dist/base/index.mjs';
+            console.log('✅ ESM imports successful');
+          "
+
+          # Test CJS requires
+          node -e "
+            const { NacosModule, NacosService, NacosConfigService } = require('./dist/index.cjs');
+            const { NacosError } = require('./dist/errors/index.cjs');
+            const { ConfigCache } = require('./dist/cache/index.cjs');
+            const { AbstractNacosClient } = require('./dist/base/index.cjs');
+            console.log('✅ CJS requires successful');
+          "
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build
-          path: dist/
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+            README.md
+            LICENSE
           if-no-files-found: error
 
       - name: Version and Release
@@ -71,37 +128,128 @@ jobs:
           # Use standard-version to bump version and create changelog
           npx standard-version --release-as ${{ inputs.bump }}
 
+          # Get the new version for later use
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
           # Push the version commit and tag
           git push --follow-tags
 
-          # Publish to npm
+          # Dry run first to check package
+          echo "🔍 Performing npm publish dry run..."
+          npm publish --dry-run --access public
+
+          # Actual publish
+          echo "📦 Publishing to npm..."
           npm publish --access public
+
+          echo "✅ Successfully published v$NEW_VERSION to npm"
         shell: bash
 
-      - name: Download published npm tarball
-        id: download_tarball
+      - name: Verify published package
         run: |
           set -euo pipefail
           PKG=$(node -p "require('./package.json').name")
-          VER=$(node -p "require('./package.json').version")
-          echo "Waiting for $PKG@$VER to be available on npm..."
+          VER=$NEW_VERSION
+
+          echo "🔍 Waiting for $PKG@$VER to be available on npm..."
           for i in {1..24}; do
             if npm view "$PKG@$VER" version --silent >/dev/null 2>&1; then
-              echo "Found $PKG@$VER on npm (attempt $i)."
+              echo "✅ Found $PKG@$VER on npm (attempt $i)"
               break
             fi
-            echo "Not yet available (attempt $i). Sleeping 5s..."
+            echo "⏳ Not yet available (attempt $i/24). Sleeping 5s..."
             sleep 5
           done
-          npm view "$PKG@$VER" version --silent >/dev/null 2>&1 || true
-          TARBALL=$(npm pack "$PKG@$VER" --silent)
-          echo "TARBALL=$TARBALL" >> $GITHUB_ENV
+
+          # Verify the package can be viewed
+          if npm view "$PKG@$VER" version --silent >/dev/null 2>&1; then
+            echo "✅ Package verification successful"
+            
+            # Show package info
+            echo "📦 Package information:"
+            npm view "$PKG@$VER" --json | jq -r '.name + "@" + .version + " - " + .description'
+            
+            # Download and verify tarball
+            echo "📥 Downloading tarball for verification..."
+            TARBALL=$(npm pack "$PKG@$VER" --silent)
+            echo "TARBALL=$TARBALL" >> $GITHUB_ENV
+            
+            # Extract and verify dual module format
+            tar -tzf "$TARBALL" | grep -E "\.(mjs|cjs|d\.ts)$" | head -10
+            echo "✅ Tarball contains dual module format files"
+          else
+            echo "❌ Package verification failed"
+            exit 1
+          fi
         shell: bash
 
-      - name: Upload npm tarball to GitHub Release assets
+      - name: Test published package installation
+        run: |
+          # Create a temporary directory for testing
+          mkdir -p /tmp/package-test
+          cd /tmp/package-test
+
+          PKG=$(node -p "require('$GITHUB_WORKSPACE/package.json').name")
+          VER=$NEW_VERSION
+
+          # Initialize a test package.json
+          echo '{"type": "module"}' > package.json
+
+          # Install the published package
+          echo "📦 Installing published package $PKG@$VER..."
+          npm install "$PKG@$VER" --no-save
+
+          # Test ESM import
+          echo "🧪 Testing ESM import..."
+          node -e "
+            import('$PKG').then(pkg => {
+              console.log('✅ ESM import successful:', Object.keys(pkg).slice(0, 5).join(', '));
+            }).catch(err => {
+              console.error('❌ ESM import failed:', err.message);
+              process.exit(1);
+            });
+          "
+
+          # Test CJS require (change to commonjs)
+          echo '{"type": "commonjs"}' > package.json
+          echo "🧪 Testing CJS require..."
+          node -e "
+            const pkg = require('$PKG');
+            console.log('✅ CJS require successful:', Object.keys(pkg).slice(0, 5).join(', '));
+          "
+
+          echo "✅ Published package installation and import tests successful"
+
+      - name: Upload release assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG=v$(node -p "require('./package.json').version")
-          gh release upload "$TAG" "$TARBALL" --clobber
+          TAG=v$NEW_VERSION
+
+          # Upload tarball to GitHub Release
+          if [ -n "$TARBALL" ]; then
+            echo "📎 Uploading $TARBALL to GitHub Release $TAG..."
+            gh release upload "$TAG" "$TARBALL" --clobber
+          fi
+
+          # Create and upload build summary
+          echo "# Release Build Summary" > release-summary.md
+          echo "" >> release-summary.md
+          echo "**Version:** $NEW_VERSION" >> release-summary.md
+          echo "**Build Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> release-summary.md
+          echo "**Node.js Version:** $(node --version)" >> release-summary.md
+          echo "**pnpm Version:** $(pnpm --version)" >> release-summary.md
+          echo "" >> release-summary.md
+          echo "## Dual Module Format Support" >> release-summary.md
+          echo "✅ ESM (.mjs files)" >> release-summary.md
+          echo "✅ CJS (.cjs files)" >> release-summary.md
+          echo "✅ TypeScript declarations (.d.ts files)" >> release-summary.md
+          echo "" >> release-summary.md
+          echo "## Build Artifacts" >> release-summary.md
+          ls -la dist/ >> release-summary.md
+
+          gh release upload "$TAG" "release-summary.md" --clobber
+
+          echo "✅ Release assets uploaded successfully"
         shell: bash

@@ -15,6 +15,7 @@
 ## 特性
 
 - 🚀 **双模式支持**: 完整模式（服务注册 + 配置管理）和仅配置模式
+- 📦 **双模块格式**: 同时支持 ESM 和 CJS，兼容所有 Node.js 环境
 - 📝 **多格式配置**: 支持 JSON、JSONC、JSON5、YAML、XML、Properties、HTML、Text 等格式
 - 🔄 **配置热更新**: 支持配置订阅和动态更新
 - 🌍 **环境变量**: 支持环境变量占位符和默认值
@@ -24,6 +25,7 @@
 - 🛡️ **错误处理**: 结构化错误类和详细调试信息
 - ⚡ **性能优化**: 内置 LRU 缓存和内存管理
 - 🔌 **可扩展**: 插件化架构，支持自定义解析器
+- ✅ **全面测试**: 完整的 CI/CD 流程和模块兼容性测试
 
 ## 安装
 
@@ -34,6 +36,26 @@ yarn add cl-nestjs-nacos
 # 或
 pnpm add cl-nestjs-nacos
 ```
+
+### 模块格式支持
+
+此库同时支持 ESM 和 CJS 模块格式，可以在任何 Node.js 环境中使用：
+
+```typescript
+// ESM (ES Modules)
+import { NacosModule, NacosService } from 'cl-nestjs-nacos';
+import { NacosError } from 'cl-nestjs-nacos/errors';
+
+// CJS (CommonJS)
+const { NacosModule, NacosService } = require('cl-nestjs-nacos');
+const { NacosError } = require('cl-nestjs-nacos/errors');
+```
+
+支持的子模块导入路径：
+
+- `cl-nestjs-nacos/errors` - 错误处理类
+- `cl-nestjs-nacos/cache` - 缓存功能
+- `cl-nestjs-nacos/base` - 基础抽象类
 
 ## 快速开始
 
