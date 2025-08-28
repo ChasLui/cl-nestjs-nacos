@@ -1,4 +1,6 @@
 import './style.css';
-import { logger } from '@/index';
+import { NacosModule, NacosService } from '@/index';
 
-logger('Hello Playground!');
+console.log('Hello Playground!');
+console.log('NacosModule:', NacosModule);
+console.log('NacosService:', NacosService);
