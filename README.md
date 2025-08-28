@@ -6,7 +6,7 @@
   @chaslui1/nestjs-nacos
 </h1>
 
-[![npm version](https://badge.fury.io/js/nestjs-nacos.svg)](https://badge.fury.io/js/nestjs-nacos)
+[![npm version](https://badge.fury.io/js/@chaslui1/nestjs-nacos.svg)](https://badge.fury.io/js/@chaslui1/nestjs-nacos)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Build Status](https://github.com/chaslui/nestjs-nacos/workflows/CI/badge.svg)](https://github.com/chaslui/nestjs-nacos/actions)
 
