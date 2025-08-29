@@ -1,19 +1,23 @@
 name: '🔧 CI - Build & Test'
 
 # Continuous Integration workflow for building, testing, and validating the cl-nestjs-nacos library
-# Runs on pull requests and pushes to non-main branches for validation
+# Runs on pull requests to main and pushes to all branches (except release commits)
 # Tests across multiple Node.js versions to ensure compatibility
 
 on:
   pull_request:
     branches: [main]
   push:
-    branches-ignore: [main] # Don't run on main branch pushes to avoid conflicts with release workflow
+    # Run on all branches including main, but skip release commits
+    branches: ['**']
 
 jobs:
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 15 # Prevent indefinite hanging
+    # Skip if it's a release commit to avoid conflicts with release workflow
+    if: >-
+      ${{ !startsWith(github.event.head_commit.message, 'chore: release v') }}
 
     strategy:
       matrix:
