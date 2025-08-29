@@ -13,10 +13,12 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15 # Prevent indefinite hanging
 
     strategy:
       matrix:
         node-version: [20, 22]
+      fail-fast: false # Don't cancel other jobs if one fails
 
     steps:
       - name: 📥 Checkout Repository
@@ -32,14 +34,31 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            playground/pnpm-lock.yaml
+
+      - name: 🧹 Clear pnpm cache if needed
+        run: |
+          echo "Checking pnpm cache status..."
+          pnpm store status || pnpm store prune || true
 
       - name: 📚 Install Dependencies
-        run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
+        run: |
+          echo "Installing root dependencies..."
+          pnpm install --frozen-lockfile --prefer-offline
+          echo "Installing playground dependencies..."
+          cd playground && pnpm install --frozen-lockfile --prefer-offline
 
       - name: 🔍 Run Quality Checks (Lint & Test)
+        timeout-minutes: 10
         run: |
+          echo "Running linter..."
           pnpm lint
+          echo "Running tests with coverage..."
           pnpm coverage
+          echo "Building library..."
           pnpm build
 
       - name: ✅ Verify Build Outputs
@@ -62,17 +81,24 @@ jobs:
           echo "✅ All build outputs verified"
 
       - name: 🧪 Test Module Imports (ESM & CJS)
+        timeout-minutes: 2
         run: |
-          # Test ESM imports
+          echo "Testing ESM imports..."
           node --input-type=module -e "
             import { NacosModule, NacosService } from './dist/index.mjs';
             console.log('✅ ESM import successful:', typeof NacosModule, typeof NacosService);
+            if (typeof NacosModule !== 'function' || typeof NacosService !== 'function') {
+              throw new Error('Invalid exports detected');
+            }
           "
 
-          # Test CJS requires  
+          echo "Testing CJS requires..."
           node -e "
             const { NacosModule, NacosService } = require('./dist/index.cjs');
             console.log('✅ CJS require successful:', typeof NacosModule, typeof NacosService);
+            if (typeof NacosModule !== 'function' || typeof NacosService !== 'function') {
+              throw new Error('Invalid exports detected');
+            }
           "
 
       - name: 📊 Upload Coverage to Codecov

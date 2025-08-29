@@ -16,6 +16,7 @@ jobs:
   release:
     name: Release & Publish
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # Prevent indefinite hanging during release
     if: >-
       ${{ !startsWith(github.event.head_commit.message, 'chore: release v') }}
 
@@ -37,25 +38,72 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://registry.npmjs.org
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            playground/pnpm-lock.yaml
+
+      - name: 🧹 Clear pnpm cache if needed
+        run: |
+          echo "Checking pnpm cache status..."
+          pnpm store status || pnpm store prune || true
 
       - name: 📚 Install dependencies
-        run: pnpm install --frozen-lockfile
+        timeout-minutes: 5
+        run: |
+          echo "Installing root dependencies..."
+          pnpm install --frozen-lockfile --prefer-offline
+          echo "Installing playground dependencies..."
+          cd playground && pnpm install --frozen-lockfile --prefer-offline || true
+
+      - name: 🔍 Pre-release checks
+        timeout-minutes: 5
+        run: |
+          echo "Running pre-release validation..."
+          pnpm lint
+          pnpm test
+          pnpm build
+          echo "✅ All pre-release checks passed"
 
       - name: 🚀 Release with release-it
+        timeout-minutes: 10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
+          echo "Configuring git for release..."
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Starting release process..."
           pnpm release:ci --verbose
+
+          echo "✅ Release completed successfully"
 
       - name: 📊 Release Summary
         if: success()
         run: |
           echo "## 🎉 Release completed successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Package Information" >> $GITHUB_STEP_SUMMARY
           echo "- **Package**: [cl-nestjs-nacos](https://www.npmjs.com/package/cl-nestjs-nacos)" >> $GITHUB_STEP_SUMMARY
           echo "- **Release**: [View on GitHub](https://github.com/${{ github.repository }}/releases/latest)" >> $GITHUB_STEP_SUMMARY
           echo "- **Changelog**: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [NPM Registry](https://www.npmjs.com/package/cl-nestjs-nacos)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Repository](https://github.com/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
+          echo "- [Documentation](https://github.com/${{ github.repository }}#readme)" >> $GITHUB_STEP_SUMMARY
+
+      - name: ❌ Release Failure Notification
+        if: failure()
+        run: |
+          echo "## ❌ Release Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The release process encountered an error. Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Common Solutions" >> $GITHUB_STEP_SUMMARY
+          echo "- Check if all tests are passing" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify NPM_TOKEN secret is valid" >> $GITHUB_STEP_SUMMARY
+          echo "- Ensure no uncommitted changes exist" >> $GITHUB_STEP_SUMMARY
+          echo "- Check if version bump is needed" >> $GITHUB_STEP_SUMMARY
