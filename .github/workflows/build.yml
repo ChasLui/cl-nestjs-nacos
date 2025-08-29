@@ -45,18 +45,9 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Installing root dependencies..."
-          pnpm install --frozen-lockfile --prefer-offline
-
+          pnpm install --prefer-offline
           echo "Installing playground dependencies..."
-          cd playground
-
-          # Try frozen lockfile first, fallback to regular install if needed
-          if ! pnpm install --frozen-lockfile --prefer-offline 2>/dev/null; then
-            echo "⚠️  Lockfile outdated, updating dependencies..."
-            pnpm install --prefer-offline
-          else
-            echo "✅ Lockfile is up to date"
-          fi
+          cd playground && pnpm install --prefer-offline
 
       - name: 🔍 Run Quality Checks (Lint & Test)
         timeout-minutes: 10
