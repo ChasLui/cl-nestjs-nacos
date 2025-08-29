@@ -20,10 +20,11 @@
     "release": "release-it",
     "release:dry": "release-it --dry-run",
     "release:ci": "release-it --ci --no-git.requireCleanWorkingDir",
-    "playground:install": "cd playground && npm install",
+    "playground:install": "cd playground && pnpm install",
     "playground:dev": "cd playground && npm run start:dev",
     "playground:build": "cd playground && npm run build",
-    "playground:start": "cd playground && npm run start:prod"
+    "playground:start": "cd playground && npm run start:prod",
+    "playground:update": "cd playground && pnpm update && pnpm install"
   },
   "lint-staged": {
     "*.ts": "eslint --fix",

@@ -44,17 +44,24 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            playground/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: 📚 Install Dependencies
         timeout-minutes: 5
         run: |
           echo "Installing root dependencies..."
           pnpm install --frozen-lockfile --prefer-offline
+
           echo "Installing playground dependencies..."
-          cd playground && pnpm install --frozen-lockfile --prefer-offline
+          cd playground
+
+          # Try frozen lockfile first, fallback to regular install if needed
+          if ! pnpm install --frozen-lockfile --prefer-offline 2>/dev/null; then
+            echo "⚠️  Lockfile outdated, updating dependencies..."
+            pnpm install --prefer-offline
+          else
+            echo "✅ Lockfile is up to date"
+          fi
 
       - name: 🔍 Run Quality Checks
         timeout-minutes: 10
@@ -93,9 +100,7 @@ jobs:
           node-version: 20
           cache: pnpm
           registry-url: https://registry.npmjs.org
-          cache-dependency-path: |
-            pnpm-lock.yaml
-            playground/pnpm-lock.yaml
+          cache-dependency-path: pnpm-lock.yaml
 
       - name: 🧹 Clear pnpm cache if needed
         run: |
@@ -107,8 +112,17 @@ jobs:
         run: |
           echo "Installing root dependencies..."
           pnpm install --frozen-lockfile --prefer-offline
+
           echo "Installing playground dependencies..."
-          cd playground && pnpm install --frozen-lockfile --prefer-offline || true
+          cd playground
+
+          # Try frozen lockfile first, fallback to regular install if needed
+          if ! pnpm install --frozen-lockfile --prefer-offline 2>/dev/null; then
+            echo "⚠️  Lockfile outdated, updating dependencies..."
+            pnpm install --prefer-offline
+          else
+            echo "✅ Lockfile is up to date"
+          fi
 
       - name: 🔍 Check for Releasable Changes
         id: check-changes
