@@ -45,5 +45,6 @@
     "release-it-pnpm": {
       "publishPath": "."
     }
-  }
+  },
+  "increment": false
 }
