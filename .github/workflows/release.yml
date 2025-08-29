@@ -1,8 +1,8 @@
 name: '🚀 Release & Publish'
 
-# Automatic semantic versioning and npm publishing workflow
-# Triggered on every push to main branch (except release commits)
-# Uses conventional commits to determine version bump and generate changelog
+# 自动语义化版本控制和npm发布工作流
+# 在每次推送到主分支时触发（发布提交除外）
+# 使用规范提交来确定版本更新并生成变更日志
 
 on:
   push:
@@ -88,7 +88,7 @@ jobs:
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
           registry-url: https://registry.npmjs.org
           cache-dependency-path: pnpm-lock.yaml
