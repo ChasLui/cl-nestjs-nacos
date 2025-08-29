@@ -1,14 +1,14 @@
 name: '🔧 CI - Build & Test'
 
 # Continuous Integration workflow for building, testing, and validating the cl-nestjs-nacos library
-# Runs on every push to main branch and on pull requests
+# Runs on pull requests and pushes to non-main branches for validation
 # Tests across multiple Node.js versions to ensure compatibility
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches-ignore: [main] # Don't run on main branch pushes to avoid conflicts with release workflow
 
 jobs:
   ci:

@@ -1,5 +1,9 @@
 name: '🚀 Release & Publish'
 
+# Automatic semantic versioning and npm publishing workflow
+# Triggered on every push to main branch (except release commits)
+# Uses conventional commits to determine version bump and generate changelog
+
 on:
   push:
     branches:
@@ -13,10 +17,61 @@ permissions:
   id-token: write
 
 jobs:
-  release:
-    name: Release & Publish
+  # First run CI checks to ensure code quality
+  ci:
+    name: CI Validation
     runs-on: ubuntu-latest
-    timeout-minutes: 20 # Prevent indefinite hanging during release
+    timeout-minutes: 15
+    if: >-
+      ${{ !startsWith(github.event.head_commit.message, 'chore: release v') }}
+
+    strategy:
+      matrix:
+        node-version: [20, 22]
+      fail-fast: false
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup pnpm Package Manager
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      - name: 🟢 Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            playground/pnpm-lock.yaml
+
+      - name: 📚 Install Dependencies
+        timeout-minutes: 5
+        run: |
+          echo "Installing root dependencies..."
+          pnpm install --frozen-lockfile --prefer-offline
+          echo "Installing playground dependencies..."
+          cd playground && pnpm install --frozen-lockfile --prefer-offline
+
+      - name: 🔍 Run Quality Checks
+        timeout-minutes: 10
+        run: |
+          echo "Running linter..."
+          pnpm lint
+          echo "Running tests with coverage..."
+          pnpm coverage
+          echo "Building library..."
+          pnpm build
+
+  # Only run release if CI passes
+  release:
+    name: Semantic Release & Publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: ci
     if: >-
       ${{ !startsWith(github.event.head_commit.message, 'chore: release v') }}
 
@@ -55,16 +110,32 @@ jobs:
           echo "Installing playground dependencies..."
           cd playground && pnpm install --frozen-lockfile --prefer-offline || true
 
-      - name: 🔍 Pre-release checks
-        timeout-minutes: 5
+      - name: 🔍 Check for Releasable Changes
+        id: check-changes
         run: |
-          echo "Running pre-release validation..."
-          pnpm lint
-          pnpm test
-          pnpm build
-          echo "✅ All pre-release checks passed"
+          echo "Checking for conventional commits that trigger releases..."
 
-      - name: 🚀 Release with release-it
+          # Get the latest commit message
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          echo "Latest commit: $COMMIT_MSG"
+
+          # Check if commit follows conventional commit format and should trigger a release
+          if echo "$COMMIT_MSG" | grep -qE "^(feat|fix|perf)(\(.+\))?!?:"; then
+            echo "🚀 Found releasable changes (feat/fix/perf)"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif echo "$COMMIT_MSG" | grep -qE "^.+!:"; then
+            echo "🚀 Found breaking change"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          elif echo "$COMMIT_MSG" | grep -qE "BREAKING CHANGE:"; then
+            echo "🚀 Found breaking change in body"
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "ℹ️  No releasable changes found (commit doesn't match feat/fix/perf pattern)"
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 🚀 Semantic Release with release-it
+        if: steps.check-changes.outputs.should_release == 'true'
         timeout-minutes: 10
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -75,18 +146,35 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-          echo "Starting release process..."
+          echo "Starting semantic release process..."
+          echo "📊 Analyzing commits for version bump..."
+
+          # Run release-it with CI flag for automatic version determination
           pnpm release:ci --verbose
 
-          echo "✅ Release completed successfully"
+          echo "✅ Semantic release completed successfully"
 
-      - name: 📊 Release Summary
-        if: success()
+      - name: ⏭️  Skip Release
+        if: steps.check-changes.outputs.should_release != 'true'
         run: |
-          echo "## 🎉 Release completed successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "⏭️  Skipping release - no releasable changes detected"
+          echo "💡 To trigger a release, use conventional commits:"
+          echo "   • feat: for new features (minor version bump)"
+          echo "   • fix: for bug fixes (patch version bump)" 
+          echo "   • feat!: or fix!: for breaking changes (major version bump)"
+          echo "   • Any commit with 'BREAKING CHANGE:' in body (major version bump)"
+
+      - name: 📊 Release Success Summary
+        if: success() && steps.check-changes.outputs.should_release == 'true'
+        run: |
+          # Get the new version from package.json
+          NEW_VERSION=$(node -p "require('./package.json').version")
+
+          echo "## 🎉 Release v${NEW_VERSION} completed successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Package Information" >> $GITHUB_STEP_SUMMARY
           echo "- **Package**: [cl-nestjs-nacos](https://www.npmjs.com/package/cl-nestjs-nacos)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: \`v${NEW_VERSION}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Release**: [View on GitHub](https://github.com/${{ github.repository }}/releases/latest)" >> $GITHUB_STEP_SUMMARY
           echo "- **Changelog**: [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -94,6 +182,27 @@ jobs:
           echo "- [NPM Registry](https://www.npmjs.com/package/cl-nestjs-nacos)" >> $GITHUB_STEP_SUMMARY
           echo "- [GitHub Repository](https://github.com/${{ github.repository }})" >> $GITHUB_STEP_SUMMARY
           echo "- [Documentation](https://github.com/${{ github.repository }}#readme)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Installation" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "npm install cl-nestjs-nacos@${NEW_VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "# or" >> $GITHUB_STEP_SUMMARY
+          echo "pnpm add cl-nestjs-nacos@${NEW_VERSION}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: 📊 Skip Release Summary
+        if: success() && steps.check-changes.outputs.should_release != 'true'
+        run: |
+          echo "## ⏭️ Release Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "No releasable changes were detected in the latest commit." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 💡 How to Trigger a Release" >> $GITHUB_STEP_SUMMARY
+          echo "Use conventional commit messages:" >> $GITHUB_STEP_SUMMARY
+          echo "- \`feat: add new feature\` → **minor** version bump (0.1.0 → 0.2.0)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`fix: resolve bug issue\` → **patch** version bump (0.1.0 → 0.1.1)" >> $GITHUB_STEP_SUMMARY
+          echo "- \`feat!: breaking change\` → **major** version bump (0.1.0 → 1.0.0)" >> $GITHUB_STEP_SUMMARY
+          echo "- Any commit with \`BREAKING CHANGE:\` in body → **major** version bump" >> $GITHUB_STEP_SUMMARY
 
       - name: ❌ Release Failure Notification
         if: failure()
@@ -103,7 +212,8 @@ jobs:
           echo "The release process encountered an error. Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔧 Common Solutions" >> $GITHUB_STEP_SUMMARY
-          echo "- Check if all tests are passing" >> $GITHUB_STEP_SUMMARY
-          echo "- Verify NPM_TOKEN secret is valid" >> $GITHUB_STEP_SUMMARY
+          echo "- Check if all CI tests are passing" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify \`NPM_TOKEN\` secret is valid and has publish permissions" >> $GITHUB_STEP_SUMMARY
           echo "- Ensure no uncommitted changes exist" >> $GITHUB_STEP_SUMMARY
-          echo "- Check if version bump is needed" >> $GITHUB_STEP_SUMMARY
+          echo "- Check if the version already exists on npm" >> $GITHUB_STEP_SUMMARY
+          echo "- Verify conventional commit format is correct" >> $GITHUB_STEP_SUMMARY

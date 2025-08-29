@@ -1,73 +1,150 @@
-# 发布指南
+# 🚀 发布指南
 
-本项目使用 [release-it](https://github.com/release-it/release-it) 进行自动化发布，支持传统的变更日志生成和 GitHub 发布。
+本项目使用自动化的语义版本控制和发布流程，基于 [约定式提交](https://www.conventionalcommits.org/) 和 [release-it](https://github.com/release-it/release-it)。
 
-## 发布流程
+## ✨ 自动发布流程
 
-### 自动发布（推荐）
+```mermaid
+graph TD
+    A[开发者提交代码] --> B{提交消息类型?}
 
-1. **提交更改**，遵循 [约定式提交](https://www.conventionalcommits.org/) 格式：
+    B -->|feat:| C[Minor 版本升级<br/>0.1.0 → 0.2.0]
+    B -->|fix:| D[Patch 版本升级<br/>0.1.0 → 0.1.1]
+    B -->|feat!: 或 BREAKING CHANGE| E[Major 版本升级<br/>0.1.0 → 1.0.0]
+    B -->|docs:, chore:, style:| F[跳过发布]
+
+    C --> G[推送到 main 分支]
+    D --> G
+    E --> G
+    F --> H[仅运行 CI 检查]
+
+    G --> I[GitHub Actions 触发]
+    I --> J[运行 CI 验证<br/>- Lint<br/>- Test<br/>- Build]
+
+    J -->|通过| K[检测约定式提交]
+    J -->|失败| L[发布失败]
+
+    K -->|有发布类型| M[语义化版本控制<br/>- 自动升级版本<br/>- 生成 CHANGELOG<br/>- 创建 Git 标签]
+    K -->|无发布类型| N[跳过发布步骤]
+
+    M --> O[发布到 npm]
+    O --> P[创建 GitHub Release]
+    P --> Q[发布成功 🎉]
+
+    style A fill:#e1f5fe
+    style Q fill:#c8e6c9
+    style L fill:#ffcdd2
+    style F fill:#fff3e0
+    style N fill:#fff3e0
+```
+
+### 🎯 完全自动化发布（推荐）
+
+只需三步即可自动发布新版本：
+
+1. **📝 提交更改**，遵循约定式提交格式：
 
    ```bash
-   git commit -m "feat: add new feature"
-   git commit -m "fix: resolve bug issue"
-   git commit -m "docs: update documentation"
+   # 新功能 (minor version: 0.1.0 → 0.2.0)
+   git commit -m "feat: add configuration hot reload support"
+
+   # 错误修复 (patch version: 0.1.0 → 0.1.1)
+   git commit -m "fix: resolve memory leak in cache module"
+
+   # 破坏性更改 (major version: 0.1.0 → 1.0.0)
+   git commit -m "feat!: redesign API interface"
+
+   # 文档更新 (不会触发发布)
+   git commit -m "docs: update installation guide"
    ```
 
-2. **推送到主分支**：
+2. **🚀 推送到主分支**：
 
    ```bash
    git push origin main
    ```
 
-3. **GitHub Actions 将自动执行**：
-   - 运行测试和构建
-   - 根据提交消息确定下一个版本
-   - 生成变更日志
-   - 创建 Git 标签
-   - 创建 GitHub 发布
-   - 发布到 npm
+3. **🤖 GitHub Actions 自动执行**：
+   - ✅ 运行 CI 测试和构建验证
+   - 📊 分析提交消息确定版本类型
+   - 🔄 自动升级版本号
+   - 📝 生成变更日志
+   - 🏷️ 创建 Git 标签
+   - 📦 发布到 npm
+   - 🎉 创建 GitHub 发布
 
-### 手动发布
+### 🎛️ 版本升级规则
 
-手动发布请使用以下命令：
+基于约定式提交自动确定版本升级：
 
-#### 试运行（预览）
+| 提交类型                    | 示例                     | 版本升级                  | 说明           |
+| --------------------------- | ------------------------ | ------------------------- | -------------- |
+| `feat:`                     | `feat: add new API`      | **Minor** (0.1.0 → 0.2.0) | 新功能         |
+| `fix:`                      | `fix: resolve bug`       | **Patch** (0.1.0 → 0.1.1) | 错误修复       |
+| `feat!:`                    | `feat!: breaking change` | **Major** (0.1.0 → 1.0.0) | 破坏性更改     |
+| `BREAKING CHANGE:`          | 提交正文包含此标记       | **Major** (0.1.0 → 1.0.0) | 破坏性更改     |
+| `docs:`, `style:`, `chore:` | 其他类型                 | **跳过发布**              | 不触发版本发布 |
+
+### 📋 智能发布检测
+
+系统会自动检测提交消息：
+
+- ✅ **触发发布**：`feat:`、`fix:`、`perf:`、破坏性更改
+- ⏭️ **跳过发布**：`docs:`、`style:`、`chore:`、`test:`、`refactor:`
+
+## ⚙️ 设置指南
+
+### 🔐 必需的 GitHub Secrets
+
+在 GitHub 仓库设置中添加以下密钥：
+
+1. **前往仓库设置**：`Settings` → `Secrets and variables` → `Actions`
+
+2. **添加 NPM_TOKEN**：
+
+   ```bash
+   # 在本地生成 npm token
+   npm login
+   npm token create --access public --read-write
+   ```
+
+   复制生成的 token 并添加为 `NPM_TOKEN` secret
+
+3. **GITHUB_TOKEN** 由 GitHub Actions 自动提供，无需手动设置
+
+### 🛠️ 手动发布（备用选项）
+
+如需手动控制发布流程：
+
+#### 📋 试运行（预览）
 
 ```bash
 pnpm release:dry
 ```
 
-#### 交互式发布
+#### 🎛️ 交互式发布
 
 ```bash
 pnpm release
 ```
 
-#### CI 发布（非交互式）
+#### 🤖 CI 发布（非交互式）
 
 ```bash
 pnpm release:ci
 ```
 
-## 配置
+### 📁 项目配置
 
-### Release-it 配置 (`.release-it.json`)
+#### Release-it 配置 (`.release-it.json`)
 
 - **Git**：自动提交、打标签和推送
-- **npm**：以公开访问权限发布到 npm
+- **npm**：公开访问权限发布到 npm registry
 - **GitHub**：创建带有自动生成说明的发布
-- **变更日志**：使用传统的变更日志格式
-- **钩子**：在发布前运行测试和构建
+- **变更日志**：使用 Angular 约定式变更日志格式
+- **钩子**：发布前自动运行 lint、test、build
 
-### 必需的环境变量
-
-对于自动化 GitHub 发布，请在仓库中设置这些密钥：
-
-- `GITHUB_TOKEN`：由 GitHub Actions 自动提供
-- `NPM_TOKEN`：您的 npm 认证令牌（用于发布）
-
-## 提交消息格式
+## 📝 约定式提交格式
 
 遵循 [约定式提交](https://www.conventionalcommits.org/) 规范：
 
@@ -79,66 +156,135 @@ pnpm release:ci
 [可选脚注]
 ```
 
-### 类型
+### 🏷️ 提交类型
 
-- `feat`：新功能
-- `fix`：错误修复
-- `docs`：仅文档更改
-- `style`：不影响代码含义的更改
-- `refactor`：既不修复错误也不添加功能的代码更改
-- `perf`：提高性能的代码更改
-- `test`：添加缺失的测试或修正现有测试
-- `chore`：对构建过程或辅助工具的更改
+| 类型       | 说明       | 版本影响 |
+| ---------- | ---------- | -------- |
+| `feat`     | 新功能     | Minor    |
+| `fix`      | 错误修复   | Patch    |
+| `docs`     | 文档更改   | 跳过     |
+| `style`    | 代码格式化 | 跳过     |
+| `refactor` | 重构代码   | 跳过     |
+| `perf`     | 性能优化   | Patch    |
+| `test`     | 测试相关   | 跳过     |
+| `chore`    | 构建/工具  | 跳过     |
 
-### 示例
+### 📚 提交示例
 
 ```bash
-feat: add support for custom configuration
-fix: resolve memory leak in cache module
+# ✅ 触发发布的提交
+feat: add configuration hot reload support
+feat(cache): implement Redis cache adapter
+fix: resolve memory leak in service discovery
+fix(config): handle malformed YAML files properly
+perf: optimize nacos client connection pooling
+
+# ⏭️ 不触发发布的提交
 docs: update API documentation
-chore: upgrade dependencies
+style: format code with prettier
+chore: upgrade typescript to v5.0
+test: add unit tests for config parser
+refactor: extract common utilities
+
+# 🚨 破坏性更改 (Major 版本)
+feat!: redesign configuration API
+fix!: change service registration interface
+
+feat: add new feature
+
+BREAKING CHANGE: The `register` method signature has changed
 ```
 
-## 版本升级
+## 🔧 故障排除
 
-版本升级根据提交消息自动确定：
+### ❌ 常见问题
 
-- **补丁版本** (0.0.x)：`fix:`、`docs:`、`style:`、`refactor:`、`perf:`、`test:`、`chore:`
-- **次版本** (0.x.0)：`feat:`
-- **主版本** (x.0.0)：任何在脚注中包含 `BREAKING CHANGE:` 或在类型后有 `!` 的提交
-
-## 故障排除
-
-### 清理工作目录
-
-发布前确保工作目录是干净的：
+#### 1. GitHub Token 权限错误
 
 ```bash
+# 确保 GITHUB_TOKEN 有以下权限：
+# - contents: write
+# - issues: write
+# - pull-requests: write
+# - id-token: write
+```
+
+#### 2. NPM 发布失败
+
+```bash
+# 检查 NPM token 权限
+npm whoami
+npm token list
+
+# 验证包名可用性
+npm info cl-nestjs-nacos
+```
+
+#### 3. 工作目录不干净
+
+```bash
+# 清理工作目录
 git status
 git add .
 git commit -m "chore: prepare for release"
 ```
 
-### GitHub 令牌问题
+#### 4. 版本已存在
 
-如果 GitHub 发布创建失败，请确保：
+```bash
+# 检查现有版本
+npm view cl-nestjs-nacos versions --json
+git tag -l
+```
 
-1. 设置了 `GITHUB_TOKEN` 环境变量
-2. 令牌对仓库有适当的权限
+### 🔍 调试发布流程
 
-### npm 发布问题
+#### 本地测试发布
 
-如果 npm 发布失败：
+```bash
+# 干运行模式，查看将要执行的操作
+pnpm release:dry
 
-1. 验证 `NPM_TOKEN` 设置正确
-2. 确保已登录：`npm whoami`
-3. 检查包名可用性
+# 检查约定式提交解析
+npx conventional-recommended-bump -p angular
+```
 
-## 手动创建 GitHub 发布
+#### 查看 GitHub Actions 日志
 
-如果自动化 GitHub 发布失败，请手动创建：
+1. 前往 `Actions` 标签页
+2. 点击失败的 workflow
+3. 查看详细日志输出
 
-1. 前往 [GitHub 发布页面](https://github.com/ChasLui/nest-js-nacos/releases)
-2. 点击"创建新发布"
-3. 使用 release-it 创建的标签
-4. 从 `CHANGELOG.md` 复制变更日志内容
+### 🆘 紧急恢复
+
+#### 撤销错误的发布
+
+```bash
+# 撤销 npm 发布（仅在发布后 72 小时内）
+npm unpublish cl-nestjs-nacos@<version>
+
+# 删除 Git 标签
+git tag -d v<version>
+git push origin :refs/tags/v<version>
+
+# 删除 GitHub 发布
+# 需要手动在 GitHub 界面删除
+```
+
+## 📋 发布检查清单
+
+发布前请确认：
+
+- [ ] 所有测试通过 (`pnpm test`)
+- [ ] 代码已经过 lint 检查 (`pnpm lint`)
+- [ ] 构建成功 (`pnpm build`)
+- [ ] 提交消息遵循约定式提交格式
+- [ ] `NPM_TOKEN` secret 已正确设置
+- [ ] 工作目录干净，无未提交更改
+
+## 🔗 相关链接
+
+- [约定式提交](https://www.conventionalcommits.org/)
+- [语义化版本](https://semver.org/)
+- [release-it 文档](https://github.com/release-it/release-it)
+- [GitHub Actions 文档](https://docs.github.com/en/actions)

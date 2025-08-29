@@ -10,7 +10,7 @@
     "commit": true,
     "tag": true,
     "push": true,
-    "pushArgs": ["--follow-tags"]
+    "pushArgs": ["--follow-tags", "--no-verify"]
   },
   "npm": {
     "publish": true,
