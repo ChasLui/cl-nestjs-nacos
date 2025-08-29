@@ -16,7 +16,8 @@
     "publish": true,
     "publishArgs": ["--access", "public"],
     "registry": "https://registry.npmjs.org/",
-    "skipChecks": false
+    "skipChecks": false,
+    "publishPath": "."
   },
   "github": {
     "release": true,
@@ -41,9 +42,6 @@
       "header": "# Changelog\n\nAll notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.\n\n",
       "ignoreRecommendedBump": false,
       "strictSemVer": true
-    },
-    "release-it-pnpm": {
-      "publishPath": "."
     }
   },
   "increment": false

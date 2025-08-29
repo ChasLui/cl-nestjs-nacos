@@ -2,6 +2,7 @@
   "name": "cl-nestjs-nacos-playground",
   "version": "1.0.0",
   "description": "NestJS playground for cl-nestjs-nacos library",
+  "private": true,
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",
