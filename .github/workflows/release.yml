@@ -50,9 +50,9 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Installing root dependencies..."
-          pnpm install --prefer-offline
+          pnpm install
           echo "Installing playground dependencies..."
-          cd playground && pnpm install --prefer-offline
+          cd playground && pnpm install
 
       - name: 🔍 Run Quality Checks
         timeout-minutes: 10
@@ -102,9 +102,9 @@ jobs:
         timeout-minutes: 5
         run: |
           echo "Installing root dependencies..."
-          pnpm install --prefer-offline
+          pnpm install
           echo "Installing playground dependencies..."
-          cd playground && pnpm install --prefer-offline
+          cd playground && pnpm install
 
       - name: 🔍 Check for Releasable Changes
         id: check-changes
