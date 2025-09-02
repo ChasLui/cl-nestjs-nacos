@@ -57,24 +57,64 @@ export abstract class AbstractNacosClient extends EventEmitter implements OnModu
     if (!this.options.namespace) {
       throw ValidationError.requiredOptionMissing('namespace');
     }
-    if (!this.options.accessKey) {
-      throw ValidationError.requiredOptionMissing('accessKey');
+
+    // 解析认证选项（包括环境变量）
+    const resolvedOptions = this.resolveAuthOptions();
+
+    // 验证认证信息：必须提供 accessKey/secretKey 或 username/password 中的一种
+    const hasAccessKeyAuth = resolvedOptions.accessKey && resolvedOptions.secretKey;
+    const hasUsernameAuth = resolvedOptions.username && resolvedOptions.password;
+
+    if (!hasAccessKeyAuth && !hasUsernameAuth) {
+      throw new ValidationError(
+        'Authentication credentials are required. Please provide either accessKey/secretKey or username/password via options or environment variables (NACOS_ACCESS_KEY/NACOS_SECRET_KEY or NACOS_USERNAME/NACOS_PASSWORD).',
+      );
     }
-    if (!this.options.secretKey) {
-      throw ValidationError.requiredOptionMissing('secretKey');
-    }
+  }
+
+  /**
+   * 解析认证选项，支持环境变量
+   */
+  private resolveAuthOptions() {
+    // 从环境变量获取认证信息
+    const envAccessKey = process.env.NACOS_ACCESS_KEY;
+    const envSecretKey = process.env.NACOS_SECRET_KEY;
+    const envUsername = process.env.NACOS_USERNAME;
+    const envPassword = process.env.NACOS_PASSWORD;
+
+    return {
+      server: this.options.server,
+      namespace: this.options.namespace,
+      // 优先使用配置中的值，然后回退到环境变量
+      accessKey: this.options.accessKey || envAccessKey,
+      secretKey: this.options.secretKey || envSecretKey,
+      username: this.options.username || envUsername,
+      password: this.options.password || envPassword,
+    };
   }
 
   /**
    * 创建客户端选项
    */
   private createClientOptions(): ClientOptions {
+    // 从环境变量或选项中获取认证信息
+    const resolvedOptions = this.resolveAuthOptions();
+
     const options: ClientOptions = {
-      serverAddr: this.options.server,
-      namespace: this.options.namespace,
-      accessKey: this.options.accessKey,
-      secretKey: this.options.secretKey,
+      serverAddr: resolvedOptions.server,
+      namespace: resolvedOptions.namespace,
     };
+
+    // 添加认证信息
+    if (resolvedOptions.accessKey && resolvedOptions.secretKey) {
+      options.accessKey = resolvedOptions.accessKey;
+      options.secretKey = resolvedOptions.secretKey;
+    }
+
+    if (resolvedOptions.username && resolvedOptions.password) {
+      options.username = resolvedOptions.username;
+      options.password = resolvedOptions.password;
+    }
 
     // 默认启用环境变量填充
     if (!Object.hasOwn(this.options, 'enableEnvVars')) {
@@ -82,8 +122,8 @@ export abstract class AbstractNacosClient extends EventEmitter implements OnModu
     }
 
     // 处理HTTP格式的服务器地址
-    if (/^http/.test(this.options.server)) {
-      const url = new globalThis.URL(this.options.server);
+    if (/^http/.test(resolvedOptions.server)) {
+      const url = new globalThis.URL(resolvedOptions.server);
       options.serverAddr = url.host;
     }
 

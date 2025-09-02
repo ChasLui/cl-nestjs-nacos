@@ -55,6 +55,10 @@ describe('AbstractNacosClient - Simple Tests', () => {
     }
     delete process.env.TEST_VAR;
     delete process.env.DEFAULT_VAR;
+    delete process.env.NACOS_ACCESS_KEY;
+    delete process.env.NACOS_SECRET_KEY;
+    delete process.env.NACOS_USERNAME;
+    delete process.env.NACOS_PASSWORD;
   });
 
   describe('constructor and validation', () => {
@@ -246,6 +250,74 @@ describe('AbstractNacosClient - Simple Tests', () => {
     });
   });
 
+  describe('environment variable authentication', () => {
+    it('should use environment variables for accessKey/secretKey authentication', () => {
+      process.env.NACOS_ACCESS_KEY = 'env-access-key';
+      process.env.NACOS_SECRET_KEY = 'env-secret-key';
+
+      expect(() => {
+        new TestNacosClient({
+          server: 'localhost:8848',
+          namespace: 'test',
+          config: { group: 'DEFAULT_GROUP', dataId: 'test.yaml' },
+        });
+      }).not.toThrow();
+    });
+
+    it('should use environment variables for username/password authentication', () => {
+      process.env.NACOS_USERNAME = 'env-username';
+      process.env.NACOS_PASSWORD = 'env-password';
+
+      expect(() => {
+        new TestNacosClient({
+          server: 'localhost:8848',
+          namespace: 'test',
+          config: { group: 'DEFAULT_GROUP', dataId: 'test.yaml' },
+        });
+      }).not.toThrow();
+    });
+
+    it('should prioritize options over environment variables', () => {
+      process.env.NACOS_ACCESS_KEY = 'env-access-key';
+      process.env.NACOS_SECRET_KEY = 'env-secret-key';
+      process.env.NACOS_USERNAME = 'env-username';
+      process.env.NACOS_PASSWORD = 'env-password';
+
+      expect(() => {
+        new TestNacosClient({
+          server: 'localhost:8848',
+          namespace: 'test',
+          accessKey: 'option-access-key',
+          secretKey: 'option-secret-key',
+          config: { group: 'DEFAULT_GROUP', dataId: 'test.yaml' },
+        });
+      }).not.toThrow();
+    });
+
+    it('should fail when no authentication is provided via options or environment', () => {
+      expect(() => {
+        new TestNacosClient({
+          server: 'localhost:8848',
+          namespace: 'test',
+          config: { group: 'DEFAULT_GROUP', dataId: 'test.yaml' },
+        });
+      }).toThrow(ValidationError);
+    });
+
+    it('should accept mixed authentication from options and environment', () => {
+      process.env.NACOS_SECRET_KEY = 'env-secret-key';
+
+      expect(() => {
+        new TestNacosClient({
+          server: 'localhost:8848',
+          namespace: 'test',
+          accessKey: 'option-access-key',
+          config: { group: 'DEFAULT_GROUP', dataId: 'test.yaml' },
+        });
+      }).not.toThrow();
+    });
+  });
+
   describe('advanced configuration features', () => {
     it('should handle environment variable replacement', async () => {
       // Simplified test - just verify client creation and basic functionality
@@ -326,6 +398,64 @@ describe('AbstractNacosClient - Simple Tests', () => {
         new TestNacosClient({
           ...mockOptions,
           secretKey: undefined,
+        });
+      }).toThrow(ValidationError);
+    });
+
+    it('should handle missing both authentication methods', () => {
+      expect(() => {
+        new TestNacosClient({
+          ...mockOptions,
+          accessKey: undefined,
+          secretKey: undefined,
+          username: undefined,
+          password: undefined,
+        });
+      }).toThrow(ValidationError);
+    });
+
+    it('should accept username/password authentication', () => {
+      expect(() => {
+        new TestNacosClient({
+          ...mockOptions,
+          accessKey: undefined,
+          secretKey: undefined,
+          username: 'test-user',
+          password: 'test-password',
+        });
+      }).not.toThrow();
+    });
+
+    it('should accept both authentication methods together', () => {
+      expect(() => {
+        new TestNacosClient({
+          ...mockOptions,
+          username: 'test-user',
+          password: 'test-password',
+        });
+      }).not.toThrow();
+    });
+
+    it('should handle incomplete username/password authentication', () => {
+      expect(() => {
+        new TestNacosClient({
+          ...mockOptions,
+          accessKey: undefined,
+          secretKey: undefined,
+          username: 'test-user',
+          password: undefined,
+        });
+      }).toThrow(ValidationError);
+    });
+
+    it('should handle incomplete accessKey/secretKey authentication', () => {
+      expect(() => {
+        new TestNacosClient({
+          ...mockOptions,
+          accessKey: 'test-key',
+          secretKey: undefined,
+          username: undefined,
+          password: undefined,
         });
       }).toThrow(ValidationError);
     });

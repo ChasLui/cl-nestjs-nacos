@@ -70,9 +70,13 @@ import { NacosService, NacosModule, ConfigType } from 'cl-nestjs-nacos';
   imports: [
     NacosModule.forRoot({
       server: process.env.NACOS_SERVER || 'localhost:8848',
+      namespace: process.env.NACOS_NAMESPACE || 'public',
+      // 认证方式 1: AccessKey/SecretKey
       accessKey: process.env.NACOS_ACCESS_KEY,
       secretKey: process.env.NACOS_SECRET_KEY,
-      namespace: process.env.NACOS_NAMESPACE || 'public',
+      // 认证方式 2: Username/Password（二选一即可）
+      // username: process.env.NACOS_USERNAME,
+      // password: process.env.NACOS_PASSWORD,
       config: {
         group: process.env.NACOS_GROUP || 'DEFAULT_GROUP',
         dataId: process.env.NACOS_DATA_ID || 'application.yaml',
@@ -132,9 +136,10 @@ import { NacosConfigService, NacosModule, ConfigType } from 'cl-nestjs-nacos';
   imports: [
     NacosModule.forRoot({
       server: process.env.NACOS_SERVER || 'localhost:8848',
+      namespace: process.env.NACOS_NAMESPACE || 'public',
+      // 使用 AccessKey/SecretKey 认证
       accessKey: process.env.NACOS_ACCESS_KEY,
       secretKey: process.env.NACOS_SECRET_KEY,
-      namespace: process.env.NACOS_NAMESPACE || 'public',
       configOnly: true, // 启用仅配置模式
       config: {
         group: process.env.NACOS_GROUP || 'DEFAULT_GROUP',
@@ -170,6 +175,74 @@ export class ConfigService {
     return config;
   }
 }
+```
+
+## 认证方式
+
+cl-nestjs-nacos 支持两种认证方式连接到 Nacos 服务器：
+
+### 1. AccessKey/SecretKey 认证（推荐）
+
+这是推荐的认证方式，适用于生产环境：
+
+```typescript
+NacosModule.forRoot({
+  server: 'nacos.example.com:8848',
+  namespace: 'production',
+  accessKey: process.env.NACOS_ACCESS_KEY,
+  secretKey: process.env.NACOS_SECRET_KEY,
+  // ... 其他配置
+});
+```
+
+### 2. Username/Password 认证
+
+适用于开发和测试环境：
+
+```typescript
+NacosModule.forRoot({
+  server: 'localhost:8848',
+  namespace: 'dev',
+  username: process.env.NACOS_USERNAME,
+  password: process.env.NACOS_PASSWORD,
+  // ... 其他配置
+});
+```
+
+### 环境变量支持
+
+你可以通过环境变量来配置认证信息，无需在代码中硬编码：
+
+#### AccessKey/SecretKey 环境变量
+
+```bash
+export NACOS_ACCESS_KEY=your_access_key
+export NACOS_SECRET_KEY=your_secret_key
+```
+
+#### Username/Password 环境变量
+
+```bash
+export NACOS_USERNAME=your_username
+export NACOS_PASSWORD=your_password
+```
+
+### 优先级规则
+
+1. **配置优先**: 代码中直接设置的认证信息优先级最高
+2. **环境变量**: 如果代码中未设置，则使用对应的环境变量
+3. **必须提供**: 必须提供其中一种完整的认证方式（accessKey+secretKey 或 username+password）
+
+```typescript
+// 示例：混合使用配置和环境变量
+NacosModule.forRoot({
+  server: 'nacos.example.com:8848',
+  namespace: 'production',
+  // 如果设置了 accessKey，会优先使用，否则使用 NACOS_ACCESS_KEY 环境变量
+  accessKey: process.env.CUSTOM_ACCESS_KEY,
+  // secretKey 如果未设置，会使用 NACOS_SECRET_KEY 环境变量
+  // ... 其他配置
+});
 ```
 
 ## 配置管理
@@ -390,10 +463,19 @@ NacosModule.forRoot({
 ```bash
 # .env 文件
 NACOS_SERVER=nacos.example.com:8848
-NACOS_ACCESS_KEY=your_access_key
-NACOS_SECRET_KEY=your_secret_key
 NACOS_NAMESPACE=production
 
+# 认证方式 1: AccessKey/SecretKey（推荐用于生产环境）
+NACOS_ACCESS_KEY=your_access_key
+NACOS_SECRET_KEY=your_secret_key
+
+# 认证方式 2: Username/Password（适用于开发和测试环境）
+# NACOS_USERNAME=your_username
+# NACOS_PASSWORD=your_password
+
+# 注意：只需要配置其中一种认证方式即可
+
+# 应用配置的环境变量
 DB_HOST=prod-db.example.com
 DB_PORT=5432
 DB_USERNAME=app_user
@@ -622,8 +704,17 @@ Nacos 模块配置选项接口。
 interface NacosOptions {
   server: string; // Nacos 服务器地址
   namespace: string; // 命名空间
+
+  // 认证方式 1: AccessKey/SecretKey（推荐用于生产环境）
   accessKey?: string; // 访问密钥
   secretKey?: string; // 密钥
+
+  // 认证方式 2: Username/Password（适用于开发和测试环境）
+  username?: string; // 用户名
+  password?: string; // 密码
+
+  // 注意：必须提供上述两种认证方式中的一种
+
   enableEnvVars?: boolean; // 是否启用环境变量替换（默认: true）
   configOnly?: boolean; // 是否仅配置模式（默认: false）
   config?: {

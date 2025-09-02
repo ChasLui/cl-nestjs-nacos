@@ -41,6 +41,8 @@ export interface ClientCredentials {
   namespace: string;
   accessKey?: string;
   secretKey?: string;
+  username?: string;
+  password?: string;
 }
 
 /** Nacos基础选项 */
@@ -49,6 +51,8 @@ export interface BaseNacosOptions {
   readonly namespace: string;
   readonly accessKey?: string;
   readonly secretKey?: string;
+  readonly username?: string;
+  readonly password?: string;
   readonly enableEnvVars?: boolean;
 }
 

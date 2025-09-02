@@ -39,6 +39,18 @@ describe('NacosService', () => {
     },
   };
 
+  const mockUsernameOptions: NacosOptions = {
+    server: 'http://localhost:8848',
+    namespace: 'test-namespace',
+    username: 'test-username',
+    password: 'test-password',
+    enableEnvVars: true,
+    config: {
+      group: 'DEFAULT_GROUP',
+      dataId: 'application.yaml',
+    },
+  };
+
   let service: NacosService;
   let mockNetworkInterfaces: ReturnType<typeof vi.mocked<typeof os.networkInterfaces>>;
 
@@ -65,14 +77,27 @@ describe('NacosService', () => {
   });
 
   describe('constructor', () => {
-    it('should create service with valid options', () => {
+    it('should create service with valid accessKey/secretKey options', () => {
       expect(() => {
         service = new NacosService(mockOptions);
       }).not.toThrow();
     });
 
-    it('should create service in config-only mode', () => {
+    it('should create service with valid username/password options', () => {
+      expect(() => {
+        service = new NacosService(mockUsernameOptions);
+      }).not.toThrow();
+    });
+
+    it('should create service in config-only mode with accessKey/secretKey', () => {
       const configOnlyOptions = { ...mockOptions, configOnly: true };
+      expect(() => {
+        service = new NacosService(configOnlyOptions);
+      }).not.toThrow();
+    });
+
+    it('should create service in config-only mode with username/password', () => {
+      const configOnlyOptions = { ...mockUsernameOptions, configOnly: true };
       expect(() => {
         service = new NacosService(configOnlyOptions);
       }).not.toThrow();
