@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.0.1](https://github.com/chaslui/cl-nestjs-nacos/compare/v1.0.0...vnull) (2025-09-02)
+
+### Bug Fixes
+
+- cd ([7f3ce25](https://github.com/chaslui/cl-nestjs-nacos/commit/7f3ce259072d395b02888b0ff3bbaddbf9aac267))
+
+### Features
+
+- 支持用户名密码授权 ([ad92a17](https://github.com/chaslui/cl-nestjs-nacos/commit/ad92a1783738b791478fa8539deead93af9d0104))
+
 # [1.0.0](https://github.com/chaslui/cl-nestjs-nacos/compare/v0.0.2...v0.0.2) (2025-08-29)
 
 ### Bug Fixes
