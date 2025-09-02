@@ -17,7 +17,8 @@
     "publishArgs": ["--access", "public"],
     "registry": "https://registry.npmjs.org/",
     "skipChecks": false,
-    "publishPath": "."
+    "publishPath": ".",
+    "versionArgs": ["--no-git-tag-version"]
   },
   "github": {
     "release": true,
@@ -44,5 +45,5 @@
       "strictSemVer": true
     }
   },
-  "increment": false
+  "increment": "conventional:angular"
 }
